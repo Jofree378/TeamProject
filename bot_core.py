@@ -5,7 +5,7 @@ import sqlalchemy as sq
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import UsersParameters, Pairs, Photo, create_tables
-from config1 import VK_GROUP_TOKEN, VK_USER_TOKEN, GROUP_ID
+# from config1 import VK_GROUP_TOKEN, VK_USER_TOKEN, GROUP_ID
 from config import DATABASE, PASSWORD, USER, SUBD
 
 class VK_Dating_Bot:
