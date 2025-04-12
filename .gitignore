@@ -2,3 +2,5 @@
 .idea/
 __pycache__/
 config.py
+.env
+config1.py
