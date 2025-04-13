@@ -1,12 +1,10 @@
 import vk_api
 from vk_api.longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-import sqlalchemy as sq
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import UsersParameters, Pairs, Photo, create_tables
+from models.db.db_model import UsersParameters, create_tables
 # from config1 import VK_GROUP_TOKEN, VK_USER_TOKEN, GROUP_ID
-from config import DATABASE, PASSWORD, USER, SUBD
 
 class VK_Dating_Bot:
     def __init__(self):
@@ -30,7 +28,9 @@ class VK_Dating_Bot:
         text = message['text'].lower()  # Текст сообщения в нижнем регистре
 
         with self.Session() as session:
-        
+
+
+            # --> Здесь скорее можно добавить создание объекта User и дальше его пихать <--
             user = session.query(UsersParameters).filter_by(user_id=user_id).first()
 
             if text == 'начать':  # Команда старта
