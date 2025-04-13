@@ -28,16 +28,17 @@ class User:
 
 
     # Метод возвращает список строк для поля Attachment в методе message.send. Нужно для прикрепления фото к сообщению
-    def get_photos(self, count: int = 3) -> list:
+    def get_photos(self, user_id, count: int = 3) -> list:
         url = f'{self.base_url}photos.get'
-        params = {'owner_id': self.user_id, 'count': count, 'album_id':
+        params = {'owner_id': user_id, 'count': count, 'album_id':
             'profile', 'extended': 1}
         params.update(self.params)
         response = requests.get(url, params=params)
         result = []
         user_profile_album = response.json()['response']['items']
         for photo in user_profile_album:
-            result.append(f"photo{self.user_id}_{photo['id']}_{self.token}")
+            # Тут смотря как сработает вроде с токеном, а вроде и без него
+            result.append(f"photo{user_id}_{photo['id']}_{self.token}")
         return result
 
 
@@ -45,7 +46,7 @@ class User:
     def get_list_matches(self, age_min, city, sex, age_max):
         url = f'{self.base_url}users.search'
         params = {'owner_id': self.user_id,
-                  'count': 4,
+                  'count': 1000,
                   'city': city,
                   'age_from': age_min,
                   'age_to': age_max,
