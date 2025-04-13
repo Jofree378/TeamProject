@@ -2,7 +2,7 @@ import sqlalchemy
 from config import BASE_URL_ACCOUNT
 from models.db.DBCrud import DBCrud
 from models.user_model import User
-
+# BASE_URL_ACCOUNT = 'https://vk.com/id' Его просто удобно задавать в отдельном файле
 
 def start_search(user: User, users_add_properties: dict = None):
     db = DBCrud()
