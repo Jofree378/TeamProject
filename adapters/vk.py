@@ -1,8 +1,26 @@
-from models.user_model import User  # Его класс без изменений
+"""
+АДАПТЕР ДЛЯ VK API (обертка для твоего User)
+
+Что делает:
+1. Использует твой класс User как черный ящик
+2. Преобразует твои структуры данных в наши
+3. Обрабатывает все различия в форматах
+
+Особенности:
+- get_profile() - возвращает данные в унифицированном формате
+- search_users() - конвертирует наши параметры в твой формат
+- get_photos() - просто прокси к твоему методу
+
+Если меняешь:
+- Сигнатуры методов User - дай знать
+- Формат возвращаемых данных - возможно, потребуются правки здесь
+"""
+
+from models.user_model import User  
 
 class VKAdapter:
     def __init__(self, token):
-        self.user = User(token, None)  # Используем его класс
+        self.user = User(token, None)  
 
     def get_profile(self, user_id):
         """Получение данных профиля"""
@@ -19,7 +37,7 @@ class VKAdapter:
         self.user.get_list_matches(
             age_min=age,
             city=city,
-            sex=1 if sex == 'female' else 2  # В его формат
+            sex=1 if sex == 'female' else 2  
         )
         return [{
             'id': match[0],
@@ -28,5 +46,5 @@ class VKAdapter:
         } for match in self.user.matches]
 
     def get_photos(self, user_id):
-        """Получение фото через его метод"""
+        """Получение фото через метод"""
         return self.user.get_photos(user_id)
