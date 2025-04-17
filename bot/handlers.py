@@ -45,12 +45,12 @@ class MessageHandler:
         profile = self.bot.vk_client.get_profile(user_id)
         if not profile.get('city'):
             self.user_states[user_id] = 'await_city'
-            self.bot.vk.messages.send(
-                user_id=user_id,
-                message="Укажите ваш город:",
-                keyboard=self.bot.keyboard.get_cancel_keyboard(),
-                random_id=0
-            )
+            self.bot.vk.method('messages.send', {
+                'user_id': user_id,
+                'message': "Укажите ваш город:",
+                'keyboard': self.bot.keyboard.get_cancel_keyboard(),
+                'random_id': 0
+            })
         else:
             self.bot.db.initialize_user(user_id, profile)
             self._send_main_menu(user_id)
@@ -59,41 +59,73 @@ class MessageHandler:
         """Обработка команды 'поиск'"""
         criteria = self.bot.db.get_user(user_id)
         matches = self.bot.vk_client.search_users(**criteria)
-        
+
         if matches:
             self.bot.db.cache_matches(user_id, matches)
-            self._show_match(user_id, matches[0])
+            match = self.bot.db.next_match(user_id)
+            self._show_match(user_id, match)
         else:
-            self.bot.vk.messages.send(
-                user_id=user_id,
-                message="Не найдено подходящих анкет",
-                keyboard=self.bot.keyboard.get_main_menu(),
-                random_id=0
-            )
+            self.bot.vk.method('messages.send', {
+                'user_id': user_id,
+                'message': "Не найдено подходящих анкет",
+                'keyboard': self.bot.keyboard.get_main_menu(),
+                'random_id': 0
+            })
 
     def _show_match(self, user_id, match):
         """Показ анкеты с клавиатурой действий"""
+
         photos = self.bot.vk_client.get_photos(match['id'])
-        
-        self.bot.vk.messages.send(
-            user_id=user_id,
-            message=f"{match['first_name']} {match['last_name']}\n"
+        message = {
+            'user_id': user_id,
+            'message': f"{match['first_name']} {match['last_name']}\n"
                    f"Ссылка: vk.com/id{match['id']}",
-            attachment=','.join(photos),
-            keyboard=self.bot.keyboard.get_search_actions(),
-            random_id=0
-        )
+            'attachment' : ','.join(photos),
+            'keyboard': self.bot.keyboard.get_search_actions(),
+            'random_id': 0
+        }
+        self.user_states[user_id] = match['pair_id']
+        self.user_states['photos'] = ','.join(photos)
+
+        self.bot.vk.method('messages.send', message)
+
+    def _handle_next_match(self, user_id):
+        """Переход к следующему"""
+        prev_match = self.user_states[user_id]
+
+        if prev_match:
+            match = self.bot.db.next_match(user_id, prev_match)
+            self._show_match(user_id, match)
+        else:
+            self.bot.vk.method('messages.send', {
+                'user_id': user_id,
+                'message': "Не найдено подходящих анкет",
+                'keyboard': self.bot.keyboard.get_main_menu(),
+                'random_id': 0
+            })
+
+
+    def _handle_add_to_favorites(self, user_id):
+        """Добавление в избранное"""
+        pair_id = self.user_states[user_id]
+        self.bot.db.add_to_favorites(pair_id=pair_id,
+                                     photos=self.user_states['photos'])
+
+        match = self.bot.db.next_match(user_id, pair_id)
+        self._show_match(user_id, match)
+
+
 
     def _handle_favorites(self, user_id):
         """Показ избранного"""
         favorites = self.bot.db.get_favorites(user_id)
         if not favorites:
-            self.bot.vk.messages.send(
-                user_id=user_id,
-                message="У вас пока нет избранных анкет",
-                keyboard=self.bot.keyboard.get_main_menu(),
-                random_id=0
-            )
+            self.bot.vk.method('messages.send', {
+                'user_id': user_id,
+                'message': "У вас пока нет избранных анкет",
+                'keyboard': self.bot.keyboard.get_main_menu(),
+                'random_id': 0
+            })
             return
 
         # Отправляем первую анкету из избранного
@@ -101,15 +133,16 @@ class MessageHandler:
 
     def _show_favorite_profile(self, user_id, favorite):
         """Показ анкеты из избранного"""
-        photos = self.bot.vk_client.get_photos(favorite['match_id'])
+        photos = self.bot.db.get_photos_to_favorites(favorite['pair_id'])
         
-        self.bot.vk.messages.send(
-            user_id=user_id,
-            message=f"❤️ Избранное:\n{favorite['first_name']} {favorite['last_name']}",
-            attachment=','.join(photos),
-            keyboard=self.bot.keyboard.get_favorites_actions(),
-            random_id=0
-        )
+        self.bot.vk.method('messages.send', {
+            'user_id' : user_id,
+            'message' : f"❤️ Избранное:\n{favorite['first_name']} {favorite['last_name']}\n"
+                        f"Ссылка: vk.com/id{favorite['match_id']}",
+            'attachment' : ','.join(photos),
+            'keyboard' : self.bot.keyboard.get_favorites_actions(),
+            'random_id' : 0
+        })
 
     def _handle_city_input(self, user_id, city):
         """Обработка ввода города"""
@@ -120,7 +153,7 @@ class MessageHandler:
         # Сохраняем город и продолжаем регистрацию
         profile = self.bot.vk_client.get_profile(user_id)
         profile['city'] = city
-        self.bot.db.initialize_user(user_id, profile)
+        # self.bot.db.initialize_user(user_id, profile)
         
         self._send_main_menu(user_id, f"Город {city} сохранён!")
 
@@ -129,13 +162,13 @@ class MessageHandler:
         message = "Выберите действие:"
         if additional_message:
             message = f"{additional_message}\n\n{message}"
-            
-        self.bot.vk.messages.send(
-            user_id=user_id,
-            message=message,
-            keyboard=self.bot.keyboard.get_main_menu(),
-            random_id=0
-        )
+
+        self.bot.vk.method('messages.send', {
+            'user_id' : user_id,
+            'message' : message,
+            'keyboard' : self.bot.keyboard.get_main_menu(),
+            'random_id' : 0
+        })
 
     def _handle_help(self, user_id):
         """Обработка команды помощи"""
@@ -149,9 +182,9 @@ class MessageHandler:
             "➡️ - следующий профиль\n"
             "✖️ - добавить в чёрный список"
         )
-        self.bot.vk.messages.send(
-            user_id=user_id,
-            message=help_text,
-            keyboard=self.bot.keyboard.get_main_menu(),
-            random_id=0
-        )
+        self.bot.vk.method('messages.send', {
+            'user_id': user_id,
+            'message': help_text,
+            'keyboard': self.bot.keyboard.get_main_menu(),
+            'random_id': 0
+        })

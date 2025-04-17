@@ -34,7 +34,6 @@ class VKinderBot:
         self.vk_client = VKAdapter(self.config.VK_USER_TOKEN)
         self.handler = MessageHandler(self)
         self.keyboard = KeyboardManager()
-        self.handler = MessageHandler(self)
 
     def run(self):
         for event in self.longpoll.listen():

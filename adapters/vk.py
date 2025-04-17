@@ -29,15 +29,16 @@ class VKAdapter:
         return {
             'age': self.user.age,
             'city': self.user.city,
-            'sex': 'female' if self.user.sex == 2 else 'male'
+            'sex': 1 if self.user.sex == 2 else 2
         }
 
-    def search_users(self, age, city, sex):
+    def search_users(self, age, age_max, city, sex):
         """Поиск с конвертацией параметров"""
         self.user.get_list_matches(
             age_min=age,
+            age_max=age_max,
             city=city,
-            sex=1 if sex == 'female' else 2  
+            sex=sex
         )
         return [{
             'id': match[0],
