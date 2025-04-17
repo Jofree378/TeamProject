@@ -18,6 +18,7 @@ class UsersParameters(Base):
 
 class Pairs(Base):
     __tablename__ = 'pairs'
+    __table_args__ = (sq.UniqueConstraint('user_id', 'match_id', name='uq_user_match'),)
 
     id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
     user_id = sq.Column(sq.Integer, sq.ForeignKey('users_parameters.user_id'), nullable=False)
@@ -32,7 +33,7 @@ class Photo(Base):
     __tablename__ = 'photo'
 
     id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
-    pair_id = sq.Column(sq.Integer, sq.ForeignKey('pairs.id'), nullable=False)
-    photo_id = sq.Column(sq.Integer, nullable=False)
+    match_id = sq.Column(sq.Integer, sq.ForeignKey('pairs.id'), nullable=False, unique=True)
+    photo_string = sq.Column(sq.String, nullable=False)
 
     match_photos = relationship(Pairs, backref='photos')
