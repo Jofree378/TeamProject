@@ -25,7 +25,10 @@ class User:
         bdate = datetime.strptime(data['bdate'], "%d.%m.%Y")
         self.age = now.year - bdate.year - ((now.month, now.day) < (bdate.month, bdate.day))
         self.sex = data['sex']
-        self.city = data['city']['id']
+        try:
+            self.city = data['city']['id']
+        except KeyError:
+            pass
 
 
     def get_photos(self, user_id, count: int = 3) -> list:
@@ -48,7 +51,8 @@ class User:
         url = f'{self.base_url}users.search'
         params = {'owner_id': self.user_id,
                   'count': 1000,
-                  'city': city,
+                  'city': city if city.isdigit() else '',
+                  'hometown' : '' if city.isdigit() else city,
                   'age_from': age_min,
                   'age_to': age_max,
                   'sex': sex,

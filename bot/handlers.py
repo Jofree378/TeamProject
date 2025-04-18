@@ -53,7 +53,7 @@ class MessageHandler:
             self.bot.vk.method('messages.send', {
                 'user_id': user_id,
                 'message': "Укажите ваш город:",
-                'keyboard': self.bot.keyboard.get_cancel_keyboard(),
+                'keyboard': self.bot.keyboard.get_main_menu(),
                 'random_id': 0
             })
         else:
@@ -159,7 +159,7 @@ class MessageHandler:
         # Сохраняем город и продолжаем регистрацию
         profile = self.bot.vk_client.get_profile(user_id)
         profile['city'] = city
-        # self.bot.db.initialize_user(user_id, profile)
+        self.bot.db.initialize_user(user_id, profile)
         
         self._send_main_menu(user_id, f"Город {city} сохранён!")
 

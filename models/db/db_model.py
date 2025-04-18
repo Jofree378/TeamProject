@@ -10,7 +10,7 @@ class UsersParameters(Base):
     user_id = sq.Column(sq.Integer, primary_key=True)
     age_min = sq.Column(sq.Integer, sq.CheckConstraint('age_min >= 16'), nullable=False)  # Минимальный или дефолт возраст
     age_max = sq.Column(sq.Integer, sq.CheckConstraint('age_max <= 80'))
-    city = sq.Column(sq.Integer, nullable=False)
+    city = sq.Column(sq.String, nullable=False)
     sex = sq.Column(sq.Integer, sq.CheckConstraint('sex >= 0 and sex <= 2'), nullable=False)
 
     sq.CheckConstraint(age_max >= age_min, name='age_check')

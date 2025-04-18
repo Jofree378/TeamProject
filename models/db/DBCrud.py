@@ -103,7 +103,7 @@ class DBCrud:
         """Выбор следующего пользователя"""
         with self.Session() as session:
             all_matches = session.query(Pairs).filter(Pairs.user_id == user_id).all()
-            match = all_matches[random.randint(1, len(all_matches))]
+            match = all_matches[random.randint(0, len(all_matches))]
             return match.match_id, match.match_name, match.match_surname, match.id
 
 
