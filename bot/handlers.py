@@ -27,7 +27,6 @@ class MessageHandler:
         user_id = message['from_id']
         text = message['text'].lower()
 
-        # Обработка команд
         if text == 'начать':
             self._handle_start(user_id)
         elif text == 'поиск':
@@ -36,9 +35,13 @@ class MessageHandler:
             self._handle_favorites(user_id)
         elif text == 'помощь':
             self._handle_help(user_id)
+        elif text == 'назад':
+            self._send_main_menu(user_id)
         elif self.user_states.get(user_id) == 'await_city':
             self._handle_city_input(user_id, text)
-        # Другие состояния и команды...
+        elif self.user_states.get(user_id) == 'viewing_favorites':
+            self._handle_favorite_selection(user_id, text)
+
 
     def _handle_start(self, user_id):
         """Обработка команды 'начать'"""
@@ -90,19 +93,22 @@ class MessageHandler:
         self.bot.vk.method('messages.send', message)
 
     def _handle_next_match(self, user_id):
-        """Переход к следующему"""
-        prev_match = self.user_states[user_id]
-
+        """Переход к следующему мэтчу (обновленная версия)"""
+        prev_match = self.user_states.get(user_id)
+        
         if prev_match:
             match = self.bot.db.next_match(user_id, prev_match)
-            self._show_match(user_id, match)
+            if match:
+                self._show_match(user_id, match)
+            else:
+                self.bot.vk.method('messages.send', {
+                    'user_id': user_id,
+                    'message': "Анкеты закончились, попробуйте поискать снова",
+                    'keyboard': self.bot.keyboard.get_main_menu(),
+                    'random_id': 0
+                })
         else:
-            self.bot.vk.method('messages.send', {
-                'user_id': user_id,
-                'message': "Не найдено подходящих анкет",
-                'keyboard': self.bot.keyboard.get_main_menu(),
-                'random_id': 0
-            })
+            self._handle_search(user_id)
 
 
     def _handle_add_to_favorites(self, user_id):
@@ -116,20 +122,20 @@ class MessageHandler:
 
 
 
-    def _handle_favorites(self, user_id):
-        """Показ избранного"""
-        favorites = self.bot.db.get_favorites(user_id)
-        if not favorites:
-            self.bot.vk.method('messages.send', {
-                'user_id': user_id,
-                'message': "У вас пока нет избранных анкет",
-                'keyboard': self.bot.keyboard.get_main_menu(),
-                'random_id': 0
-            })
-            return
-
-        # Отправляем первую анкету из избранного
-        self._show_favorite_profile(user_id, favorites[0])
+        def _handle_favorites(self, user_id):
+            """Обработка команды избранное с показом списка"""
+            favorites = self.bot.db.get_favorites(user_id)
+            if not favorites:
+                self.bot.vk.method('messages.send', {
+                    'user_id': user_id,
+                    'message': "У вас пока нет избранных анкет",
+                    'keyboard': self.bot.keyboard.get_main_menu(),
+                    'random_id': 0
+                })
+                return
+        
+            self._show_favorites_list(user_id, favorites)
+            self.user_states[user_id] = 'viewing_favorites'
 
     def _show_favorite_profile(self, user_id, favorite):
         """Показ анкеты из избранного"""
@@ -170,17 +176,55 @@ class MessageHandler:
             'random_id' : 0
         })
 
+    def _show_favorites_list(self, user_id, favorites):
+        """Показ списка избранного (новый метод)"""
+        message = "❤️ Ваше избранное:\n\n"
+        for i, favorite in enumerate(favorites, 1):
+            message += f"{i}. {favorite['first_name']} {favorite['last_name']}\n"
+            message += f"Ссылка: vk.com/id{favorite['match_id']}\n\n"
+        
+        self.bot.vk.method('messages.send', {
+            'user_id': user_id,
+            'message': message,
+            'keyboard': self.bot.keyboard.get_favorites_list_keyboard(),
+            'random_id': 0
+        })
+
+    def _handle_favorite_selection(self, user_id, text):
+        """Обработка выбора из списка избранного (новый метод)"""
+        try:
+            fav_num = int(text)
+            favorites = self.bot.db.get_favorites(user_id)
+            if 1 <= fav_num <= len(favorites):
+                self._show_favorite_profile(user_id, favorites[fav_num-1])
+            else:
+                self.bot.vk.method('messages.send', {
+                    'user_id': user_id,
+                    'message': "Неверный номер анкеты",
+                    'keyboard': self.bot.keyboard.get_favorites_list_keyboard(),
+                    'random_id': 0
+                })
+        except ValueError:
+            self.bot.vk.method('messages.send', {
+                'user_id': user_id,
+                'message': "Пожалуйста, введите номер анкеты",
+                'keyboard': self.bot.keyboard.get_favorites_list_keyboard(),
+                'random_id': 0
+            })
+
     def _handle_help(self, user_id):
         """Обработка команды помощи"""
         help_text = (
             "📌 Доступные команды:\n"
             "• Поиск - найти новые анкеты\n"
             "• Избранное - просмотреть сохранённые анкеты\n"
+            "• Назад - вернуться в главное меню\n"
             "• Помощь - показать это сообщение\n\n"
             "При поиске:\n"
             "❤️ - добавить в избранное\n"
-            "➡️ - следующий профиль\n"
-            "✖️ - добавить в чёрный список"
+            "➡️ - следующий профиль\n\n"
+            "В избранном:\n"
+            "Введите номер анкеты для просмотра"
         )
         self.bot.vk.method('messages.send', {
             'user_id': user_id,

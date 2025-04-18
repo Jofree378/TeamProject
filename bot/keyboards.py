@@ -36,8 +36,6 @@ class KeyboardManager:
         keyboard = VkKeyboard(inline=True)
         keyboard.add_button('❤️ В избранное', color=VkKeyboardColor.POSITIVE)
         keyboard.add_button('➡️ Следующий', color=VkKeyboardColor.PRIMARY)
-        keyboard.add_line()
-        keyboard.add_button('✖️ В ЧС', color=VkKeyboardColor.NEGATIVE)
         return keyboard.get_keyboard()
 
     def get_favorites_actions(self):
@@ -46,5 +44,17 @@ class KeyboardManager:
         keyboard.add_button('Написать', color=VkKeyboardColor.POSITIVE)
         keyboard.add_button('Удалить', color=VkKeyboardColor.NEGATIVE)
         keyboard.add_line()
+        keyboard.add_button('Назад', color=VkKeyboardColor.SECONDARY)
+        return keyboard.get_keyboard()
+    
+    def get_back_keyboard(self):
+        """Клавиатура с кнопкой возврата"""
+        keyboard = VkKeyboard(one_time=True)
+        keyboard.add_button('Назад', color=VkKeyboardColor.SECONDARY)
+        return keyboard.get_keyboard()
+
+    def get_favorites_list_keyboard(self):
+        """Клавиатура для списка избранного"""
+        keyboard = VkKeyboard(one_time=True)
         keyboard.add_button('Назад', color=VkKeyboardColor.SECONDARY)
         return keyboard.get_keyboard()
