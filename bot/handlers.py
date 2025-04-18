@@ -16,8 +16,6 @@
 2. Зарегистрировать команду в handle()
 """
 
-from vk_api.keyboard import VkKeyboardColor
-
 class MessageHandler:
     def __init__(self, bot):
         self.bot = bot
@@ -37,6 +35,10 @@ class MessageHandler:
             self._handle_help(user_id)
         elif text == 'назад':
             self._send_main_menu(user_id)
+        elif text == '➡️ следующий':
+            self._handle_next_match(user_id)
+        elif text == '❤️ в избранное':
+            self._handle_add_to_favorites(user_id)
         elif self.user_states.get(user_id) == 'await_city':
             self._handle_city_input(user_id, text)
         elif self.user_states.get(user_id) == 'viewing_favorites':
@@ -77,7 +79,6 @@ class MessageHandler:
 
     def _show_match(self, user_id, match):
         """Показ анкеты с клавиатурой действий"""
-
         photos = self.bot.vk_client.get_photos(match['id'])
         message = {
             'user_id': user_id,
@@ -95,7 +96,6 @@ class MessageHandler:
     def _handle_next_match(self, user_id):
         """Переход к следующему мэтчу (обновленная версия)"""
         prev_match = self.user_states.get(user_id)
-        
         if prev_match:
             match = self.bot.db.next_match(user_id, prev_match)
             if match:
@@ -122,20 +122,20 @@ class MessageHandler:
 
 
 
-        def _handle_favorites(self, user_id):
-            """Обработка команды избранное с показом списка"""
-            favorites = self.bot.db.get_favorites(user_id)
-            if not favorites:
-                self.bot.vk.method('messages.send', {
-                    'user_id': user_id,
-                    'message': "У вас пока нет избранных анкет",
-                    'keyboard': self.bot.keyboard.get_main_menu(),
-                    'random_id': 0
-                })
-                return
-        
-            self._show_favorites_list(user_id, favorites)
-            self.user_states[user_id] = 'viewing_favorites'
+    def _handle_favorites(self, user_id):
+        """Обработка команды избранное с показом списка"""
+        favorites = self.bot.db.get_favorites(user_id)
+        if not favorites:
+            self.bot.vk.method('messages.send', {
+                'user_id': user_id,
+                'message': "У вас пока нет избранных анкет",
+                'keyboard': self.bot.keyboard.get_main_menu(),
+                'random_id': 0
+            })
+            return
+
+        self._show_favorites_list(user_id, favorites)
+        self.user_states[user_id] = 'viewing_favorites'
 
     def _show_favorite_profile(self, user_id, favorite):
         """Показ анкеты из избранного"""

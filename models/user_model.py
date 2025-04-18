@@ -52,10 +52,12 @@ class User:
                   'age_from': age_min,
                   'age_to': age_max,
                   'sex': sex,
-                  'has_photo': 1
+                  'has_photo': 1,
+                  'is_closed' : False
                   }
         params.update(self.params)
         response = requests.get(url, params=params)
         pairs = response.json()['response']['items']
         for match in pairs:
-            self.matches.append([match['id'], match['first_name'], match['last_name']])
+            if not match['is_closed']:
+                self.matches.append([match['id'], match['first_name'], match['last_name']])

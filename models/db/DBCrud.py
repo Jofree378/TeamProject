@@ -1,10 +1,5 @@
-import psycopg2
-import sqlalchemy
 from sqlalchemy.exc import IntegrityError
-
 from models.db.db_model import Base, UsersParameters, Pairs, Photo
-from models.user_model import User
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import random
 
@@ -16,11 +11,6 @@ class DBCrud:
     def __init__(self, engine):
         Base.metadata.create_all(engine)
         self.Session = sessionmaker(bind=engine)
-
-
-    # def create_tables(engine):
-    #     Base.metadata.drop_all(engine)
-    #     Base.metadata.create_all(engine)
 
 
     def create_users_parameters(self, user_id, profile):
@@ -118,7 +108,7 @@ class DBCrud:
 
 
     def check_for_next_match(self, pair_id):
-        """Проверка, что мэтч в изброанном и его удаление если нет"""
+        """Проверка, что мэтч в избранном и его удаление если нет"""
         with self.Session() as session:
             match = session.query(Pairs).filter(Pairs.id == pair_id).one()
             if not match.favorite:
